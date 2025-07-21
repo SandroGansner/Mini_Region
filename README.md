@@ -1,50 +1,158 @@
-# Welcome to your Expo app 👋
+# MiniRegion App 🏔️
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Eine React Native App für die Erkundung der Region Graubünden mit Restaurants, Events, Aktivitäten und mehr.
 
-## Get started
+## ✨ Features
 
-1. Install dependencies
+- 🍽️ Restaurant-Suche und -bewertungen
+- 📅 Lokale Events und Veranstaltungen
+- 👨‍👩‍👧‍👦 Familienaktivitäten
+- 🤝 Soziale Treffen
+- 🗺️ Interaktive Karten
+- 🎮 Spielplätze
+- ⭐ Favoriten-System
 
+## 🚀 Getting Started
+
+1. **Dependencies installieren**
    ```bash
    npm install
    ```
 
-2. Start the app
-
+2. **Backend Dependencies installieren**
    ```bash
-    npx expo start
+   cd backend
+   npm install
    ```
 
-In the output, you'll find options to open the app in a
+3. **Environment Variables einrichten**
+   
+   Kopiere `.env.example` zu `.env` und fülle die benötigten Variablen aus:
+   ```
+   SUPABASE_URL=your_supabase_url
+   SUPABASE_ANON_KEY=your_supabase_anon_key
+   REACT_NATIVE_BACKEND_URL=http://localhost:5000
+   ```
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+   Für das Backend (`backend/.env`):
+   ```
+   MONGODB_URI=your_mongodb_connection_string
+   GOOGLE_API_KEY=your_google_api_key
+   PORT=5000
+   ```
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+4. **Backend starten**
+   ```bash
+   cd backend
+   npm start
+   ```
 
-## Get a fresh project
+5. **React Native App starten**
+   ```bash
+   npm run start
+   npm run android  # für Android
+   npm run ios      # für iOS
+   ```
 
-When you're ready, run:
+## 🏗️ Architektur
 
-```bash
-npm run reset-project
+### Frontend
+- **React Native** 0.74.5 mit TypeScript
+- **React Navigation** für Navigation
+- **Supabase** für Backend-Services
+- **React Native Maps** für Kartenintegration
+- **Axios** für HTTP Requests
+
+### Backend
+- **Node.js** mit Express
+- **MongoDB** für Datenspeicherung
+- **Google Places API** für Restaurant-Daten
+- **Rate Limiting** für API-Schutz
+
+### Ordnerstruktur
+```
+├── components/          # Wiederverwendbare UI-Komponenten
+├── screens/            # App-Screens
+├── navigation/         # Navigation Konfiguration
+├── services/          # API Services
+├── utils/             # Hilfsfunktionen
+├── types/             # TypeScript Interfaces
+├── constants/         # App-Konstanten
+└── backend/           # Express Backend Server
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## 🔒 Security Features
 
-## Learn more
+- ✅ Keine hardcoded API Keys
+- ✅ Input Validation & Sanitization
+- ✅ Rate Limiting (100 requests/15min)
+- ✅ Environment Variables für sensitive Daten
+- ✅ Error Boundaries für bessere Fehlerbehandlung
 
-To learn more about developing your project with Expo, look at the following resources:
+## 📱 Performance Optimizations
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- ✅ Request Timeouts (10s)
+- ✅ Image Error Handling
+- ✅ Memory Leak Prevention
+- ✅ Debounced API Calls
+- ✅ Optimized Re-rendering with useCallback
+- ✅ Limited API Results (max 20)
 
-## Join the community
+## 🛠️ Development
 
-Join our community of developers creating universal apps.
+### Linting & Formatting
+```bash
+npm run lint
+npm run format
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+### Testing
+```bash
+npm run test
+```
+
+### Building
+```bash
+npm run build:android
+npm run build:ios
+```
+
+## 📋 API Endpoints
+
+### Restaurants
+- `GET /api/restaurants` - Get restaurants
+- `GET /api/restaurants?query=pizza&lat=46.85&lng=9.53` - Search with location
+- `GET /api/refresh-restaurants` - Manual refresh from Google Places
+
+### Events
+- `GET /api/events` - Get upcoming events
+- `GET /api/events?startDate=2024-01-01` - Get events from date
+
+### Social Meetups
+- `GET /api/social-meetups` - Get all meetups
+- `POST /api/social-meetups` - Create new meetup
+
+### Family Activities
+- `GET /api/family-activities` - Get family activities
+
+## 🤝 Contributing
+
+1. Fork das Repository
+2. Erstelle einen Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit deine Änderungen (`git commit -m 'Add some AmazingFeature'`)
+4. Push zum Branch (`git push origin feature/AmazingFeature`)
+5. Öffne einen Pull Request
+
+## 📄 License
+
+Dieses Projekt ist unter der MIT License lizenziert - siehe [LICENSE](LICENSE) für Details.
+
+## 🙏 Acknowledgments
+
+- Google Places API für Restaurant-Daten
+- Unsplash für Placeholder-Bilder
+- React Native Community für excellente Libraries
+
+---
+
+Made with ❤️ in Graubünden, Switzerland

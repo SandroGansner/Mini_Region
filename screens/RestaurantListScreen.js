@@ -9,8 +9,8 @@ import { Ionicons } from '@expo/vector-icons';
 import Geolocation from '@react-native-community/geolocation';
 
 // Hinweis: API-Schlüssel sollte in Umgebungsvariablen gespeichert werden, z. B. mit react-native-dotenv
-const GOOGLE_API_KEY = 'AIzaSyB0ch6_dAstZMP9fqvbaDN47dAQlaSVQw4';
-const BACKEND_URL = 'https://792d-84-226-211-68.ngrok-free.app';
+// Removed hardcoded API key for security
+const BACKEND_URL = process.env.REACT_NATIVE_BACKEND_URL || 'http://localhost:5000';
 
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 Stunden in Millisekunden
 

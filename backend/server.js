@@ -7,7 +7,35 @@ require('dotenv').config();
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // Limit payload size
+
+// Simple rate limiting middleware
+const rateLimitMap = new Map();
+const rateLimit = (maxRequests = 100, windowMs = 15 * 60 * 1000) => { // 100 requests per 15 minutes
+  return (req, res, next) => {
+    const clientIp = req.ip || req.connection.remoteAddress;
+    const now = Date.now();
+    const windowStart = now - windowMs;
+    
+    if (!rateLimitMap.has(clientIp)) {
+      rateLimitMap.set(clientIp, []);
+    }
+    
+    const requests = rateLimitMap.get(clientIp);
+    // Remove old requests outside the window
+    const recentRequests = requests.filter(time => time > windowStart);
+    
+    if (recentRequests.length >= maxRequests) {
+      return res.status(429).json({ error: 'Too many requests' });
+    }
+    
+    recentRequests.push(now);
+    rateLimitMap.set(clientIp, recentRequests);
+    next();
+  };
+};
+
+app.use(rateLimit());
 
 console.log('Starting Mini Region Backend…');
 
@@ -216,16 +244,42 @@ const SocialMeetup = mongoose.model('SocialMeetup', socialMeetupSchema);
 
 // API-Endpoints
 
-// Restaurants
-app.get('/api/restaurants', async (req, res) => {
-  const { query, lat, lng } = req.query;
-  if (query || (lat && lng)) {
-    const loc = lat && lng ? { latitude: parseFloat(lat), longitude: parseFloat(lng) } : null;
-    const results = await fetchRestaurants(query, loc);
-    return res.json(results);
+// Input validation middleware
+const validateQueryInput = (req, res, next) => {
+  const { query } = req.query;
+  if (query && (typeof query !== 'string' || query.length > 100)) {
+    return res.status(400).json({ error: 'Invalid query parameter' });
   }
-  const stored = await Restaurant.find().limit(20);
-  res.json(stored);
+  next();
+};
+
+const validateCoordinates = (req, res, next) => {
+  const { lat, lng } = req.query;
+  if ((lat && (isNaN(parseFloat(lat)) || Math.abs(parseFloat(lat)) > 90)) ||
+      (lng && (isNaN(parseFloat(lng)) || Math.abs(parseFloat(lng)) > 180))) {
+    return res.status(400).json({ error: 'Invalid coordinates' });
+  }
+  next();
+};
+
+// Restaurants
+app.get('/api/restaurants', validateQueryInput, validateCoordinates, async (req, res) => {
+  try {
+    const { query, lat, lng } = req.query;
+    
+    if (query || (lat && lng)) {
+      const loc = lat && lng ? { latitude: parseFloat(lat), longitude: parseFloat(lng) } : null;
+      const results = await fetchRestaurants(query, loc);
+      return res.json(results);
+    }
+    
+    // Fetch from database with error handling
+    const stored = await Restaurant.find().limit(20);
+    res.json(stored);
+  } catch (error) {
+    console.error('Error fetching restaurants:', error);
+    res.status(500).json({ error: 'Failed to fetch restaurants' });
+  }
 });
 
 // MANUELLER Refresh-Endpoint für Restaurants (sofort neu von Google holen)
@@ -265,28 +319,79 @@ app.get('/api/refresh-restaurants', async (_req, res) => {
 
 // Events
 app.get('/api/events', async (req, res) => {
-  const { startDate } = req.query;
-  const since = new Date(startDate || new Date().toISOString().split('T')[0]);
-  const events = await Event.find({ date: { $gte: since } });
-  res.json(events);
+  try {
+    const { startDate } = req.query;
+    
+    // Validate date if provided
+    let since = new Date();
+    if (startDate) {
+      const parsedDate = new Date(startDate);
+      if (isNaN(parsedDate.getTime())) {
+        return res.status(400).json({ error: 'Invalid date format' });
+      }
+      since = parsedDate;
+    }
+    
+    const events = await Event.find({ date: { $gte: since } }).sort({ date: 1 });
+    res.json(events);
+  } catch (error) {
+    console.error('Error fetching events:', error);
+    res.status(500).json({ error: 'Failed to fetch events' });
+  }
 });
 
 // Familienaktivitäten
 app.get('/api/family-activities', async (_req, res) => {
-  const activities = await FamilyActivity.find();
-  res.json(activities);
+  try {
+    const activities = await FamilyActivity.find();
+    res.json(activities);
+  } catch (error) {
+    console.error('Error fetching family activities:', error);
+    res.status(500).json({ error: 'Failed to fetch family activities' });
+  }
 });
 
 // Soziale Treffen
 app.get('/api/social-meetups', async (_req, res) => {
-  const meetups = await SocialMeetup.find().sort({ createdAt: -1 });
-  res.json(meetups);
+  try {
+    const meetups = await SocialMeetup.find().sort({ createdAt: -1 });
+    res.json(meetups);
+  } catch (error) {
+    console.error('Error fetching social meetups:', error);
+    res.status(500).json({ error: 'Failed to fetch social meetups' });
+  }
 });
+
 app.post('/api/social-meetups', async (req, res) => {
-  const { title, description, date, location } = req.body;
-  const m = new SocialMeetup({ title, description, date, location });
-  await m.save();
-  res.json(m);
+  try {
+    const { title, description, date, location } = req.body;
+    
+    // Input validation
+    if (!title || typeof title !== 'string' || title.length > 100) {
+      return res.status(400).json({ error: 'Invalid title' });
+    }
+    if (!description || typeof description !== 'string' || description.length > 500) {
+      return res.status(400).json({ error: 'Invalid description' });
+    }
+    if (!date || isNaN(new Date(date).getTime())) {
+      return res.status(400).json({ error: 'Invalid date' });
+    }
+    if (!location || typeof location !== 'string' || location.length > 200) {
+      return res.status(400).json({ error: 'Invalid location' });
+    }
+    
+    const m = new SocialMeetup({ 
+      title: title.trim(), 
+      description: description.trim(), 
+      date: new Date(date), 
+      location: location.trim() 
+    });
+    await m.save();
+    res.status(201).json(m);
+  } catch (error) {
+    console.error('Error creating social meetup:', error);
+    res.status(500).json({ error: 'Failed to create social meetup' });
+  }
 });
 
 // Server starten (Port aus Kommandozeilenargumenten oder Umgebungsvariable)

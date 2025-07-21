@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
         width: '80%',
     },
     secondaryButton: {
-        backgroundColor: colors.secondary,
+        backgroundColor: colors.secondary || '#81C784',
         paddingVertical: 6,
         paddingHorizontal: 10,
         borderRadius: 6,

@@ -1,0 +1,14 @@
+# Ignoriere Dateien außerhalb des Projektverzeichnisses
+../*
+
+# Ignoriere node_modules
+node_modules/
+
+# Ignoriere build-Ordner
+ios/
+android/
+
+# Ignoriere temporäre Dateien
+*.log
+*.lock
+.DS_Store

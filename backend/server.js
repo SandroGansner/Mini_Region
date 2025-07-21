@@ -12,6 +12,11 @@ app.use(express.json());
 console.log('Starting Mini Region Backend…');
 
 // MongoDB-Verbindung
+if (!process.env.MONGODB_URI) {
+  console.error('MONGODB_URI environment variable is required');
+  process.exit(1);
+}
+
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -33,6 +38,12 @@ app.get('/api/place-autocomplete', async (req, res) => {
   if (!input) {
     return res.status(400).json({ error: 'Missing input query parameter' });
   }
+  
+  if (!process.env.GOOGLE_API_KEY) {
+    console.error('GOOGLE_API_KEY environment variable is required');
+    return res.status(500).json({ error: 'Server configuration error' });
+  }
+  
   try {
     const response = await axios.get(
       'https://maps.googleapis.com/maps/api/place/autocomplete/json',
@@ -44,6 +55,7 @@ app.get('/api/place-autocomplete', async (req, res) => {
           types: 'establishment',
           components: 'country:ch',
         },
+        timeout: 5000, // Add timeout
       }
     );
     res.json(response.data.predictions);
@@ -55,6 +67,11 @@ app.get('/api/place-autocomplete', async (req, res) => {
 
 // Funktion zum Abrufen von Restaurants
 const fetchRestaurants = async (query, location) => {
+  if (!process.env.GOOGLE_API_KEY) {
+    console.error('GOOGLE_API_KEY environment variable is required');
+    return [];
+  }
+  
   try {
     const resp = await axios.get(
       'https://maps.googleapis.com/maps/api/place/textsearch/json',
@@ -66,12 +83,18 @@ const fetchRestaurants = async (query, location) => {
           type: 'restaurant',
           key: process.env.GOOGLE_API_KEY,
         },
+        timeout: 10000, // 10 second timeout
       }
     );
 
+    if (!resp.data.results) {
+      console.warn('No results returned from Google Places API');
+      return [];
+    }
+
     // Für jedes Restaurant Details abrufen, einschließlich Website
     const detailedResults = await Promise.all(
-      resp.data.results.map(async (place) => {
+      resp.data.results.slice(0, 20).map(async (place) => { // Limit to 20 results
         try {
           const detailsResponse = await axios.get(
             'https://maps.googleapis.com/maps/api/place/details/json',

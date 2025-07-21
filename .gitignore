@@ -12,3 +12,27 @@ android/
 *.log
 *.lock
 .DS_Store
+# Security files - SSL certificates, private keys
+*.pem
+*.key
+*.p12
+*.jks
+*.crt
+*.cer
+
+# Sensitive configuration files
+.env.production
+.env.staging
+config/secrets.json
+
+# Backend build artifacts
+backend/node_modules/
+backend/dist/
+
+# Expo
+.expo/
+dist/
+web-build/
+
+# TypeScript
+*.tsbuildinfo
